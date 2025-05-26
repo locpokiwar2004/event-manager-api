@@ -9,13 +9,20 @@ router = APIRouter(prefix="/events", tags=["Events"])
 
 @router.post("/", response_model=EventResponse)
 async def create_event(event: EventCreate, db=Depends(get_db)):
-    event_dict = event.dict()
-    event_dict["organizer_id"] = ObjectId(event_dict["organizer_id"])
-    event_dict["created_at"] = datetime.utcnow()
-    event_dict["updated_at"] = datetime.utcnow()
-    result = await db.events.insert_one(event_dict)
-    new_event = await db.events.find_one({"_id": result.inserted_id})
-    return EventResponse(**new_event, id=str(new_event["_id"]))
+    try:
+        # Kiểm tra organizer_id hợp lệ
+        if not ObjectId.is_valid(event.organizer_id):
+            raise HTTPException(status_code=400, detail="Invalid organizer ID")
+        
+        event_dict = event.dict()
+        event_dict["organizer_id"] = ObjectId(event_dict["organizer_id"])
+        event_dict["created_at"] = datetime.utcnow()
+        event_dict["updated_at"] = datetime.utcnow()
+        result = await db.events.insert_one(event_dict)
+        new_event = await db.events.find_one({"_id": result.inserted_id})
+        return EventResponse(**new_event, id=str(new_event["_id"]))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid organizer ID")
 
 @router.get("/{event_id}", response_model=EventResponse)
 async def get_event(event_id: str, db=Depends(get_db)):
@@ -35,7 +42,7 @@ async def get_events(db=Depends(get_db)):
 @router.put("/{event_id}", response_model=EventResponse)
 async def update_event(event_id: str, event_update: EventUpdate, db=Depends(get_db)):
     try:
-        update_dict = {k: v for k, v in event_update.dict().items() if v is not None}
+        update_dict = {k: v for k, v in event_update.dict(exclude_unset=True).items() if v is not None}
         if not update_dict:
             raise HTTPException(status_code=400, detail="No fields to update")
         
