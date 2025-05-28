@@ -2,11 +2,15 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+class Coordinates(BaseModel):
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+
 class Location(BaseModel):
     address: str
     city: str
     country: str
-    # Bỏ trường coordinates
+    coordinates: Optional[Coordinates] = None
 
 class TicketType(BaseModel):
     type: str
@@ -18,42 +22,29 @@ class EventCreate(BaseModel):
     title: str
     category: str
     description: str
-    start_time: str
-    end_time: str
+    start_time: datetime
+    end_time: datetime
     location: Location
     ticket_types: List[TicketType]
     status: str
     organizer_id: str
-    image_url: Optional[str] = None
-
-class EventUpdate(BaseModel):
-    title: Optional[str] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
-    location: Optional[Location] = None
-    ticket_types: Optional[List[TicketType]] = None
-    status: Optional[str] = None
-    image_url: Optional[str] = None
+    image_url: str
 
 class EventResponse(BaseModel):
     id: str
     title: str
     category: str
     description: str
-    start_time: str
-    end_time: str
+    start_time: datetime
+    end_time: datetime
     location: Location
     ticket_types: List[TicketType]
     status: str
     organizer_id: str
-    image_url: Optional[str]
+    image_url: str
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        from_attributes = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
