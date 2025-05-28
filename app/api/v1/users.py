@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.user import UserCreate, UserUpdate, UserResponse
 from app.config.database import get_db
+from passlib.context import CryptContext
 from datetime import datetime
 from bson import ObjectId
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["Users"])
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
@@ -15,6 +17,7 @@ async def create_user(user: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
         raise HTTPException(status_code=400, detail="Email already exists")
     
     user_dict = user.dict()
+    user_dict["password"] = pwd_context.hash(user_dict["password"])
     user_dict["created_at"] = datetime.utcnow()
     user_dict["updated_at"] = datetime.utcnow()
     result = await db.users.insert_one(user_dict)
@@ -61,4 +64,4 @@ async def delete_user(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     result = await db.users.delete_one({"_id": ObjectId(user_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted"}
+    return {"message": "Deleted"}

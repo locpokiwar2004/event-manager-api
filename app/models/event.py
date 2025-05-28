@@ -42,9 +42,7 @@ class EventResponse(BaseModel):
     status: str
     organizer_id: str
     image_url: str
-    created_at: datetime
-    updated_at: datetime
-
+    created_at: datetime 
+    updated_at: datetime  
     class Config:
         from_attributes = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
