@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from typing import List, Optional
 from datetime import datetime
 
@@ -30,6 +30,17 @@ class EventCreate(BaseModel):
     organizer_id: str
     image_url: str
 
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    location: Optional[Location] = None
+    ticket_types: Optional[List[TicketType]] = None
+    status: Optional[str] = None
+    image_url: Optional[str] = None
+
 class EventResponse(BaseModel):
     id: str
     title: str
@@ -42,7 +53,12 @@ class EventResponse(BaseModel):
     status: str
     organizer_id: str
     image_url: str
-    created_at: datetime 
-    updated_at: datetime  
+    created_at: datetime
+    updated_at: datetime
+    
+    @field_serializer('created_at', 'updated_at', 'start_time', 'end_time')
+    def serialize_dt(self, dt: datetime, _info):
+        return dt.isoformat()
+
     class Config:
         from_attributes = True

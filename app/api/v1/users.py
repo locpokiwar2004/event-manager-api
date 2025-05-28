@@ -36,6 +36,7 @@ async def get_user(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
 @router.get("/", response_model=List[UserResponse])
 async def get_users(db: AsyncIOMotorDatabase = Depends(get_db)):
     users = await db.users.find().to_list(100)
+    # Ensure datetime fields are handled correctly by relying on UserResponse serialization
     return [UserResponse(**user, id=str(user["_id"])) for user in users]
 
 @router.put("/{user_id}", response_model=UserResponse)
