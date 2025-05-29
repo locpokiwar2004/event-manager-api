@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.user import UserCreate, UserUpdate, UserResponse
 from app.config.database import get_db
 from passlib.context import CryptContext
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from typing import List
 
@@ -16,10 +16,10 @@ async def create_user(user: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists")
     
-    user_dict = user.dict()
+    user_dict = user.model_dump()  # Thay dict() bằng model_dump()
     user_dict["password"] = pwd_context.hash(user_dict["password"])
-    user_dict["created_at"] = datetime.utcnow()
-    user_dict["updated_at"] = datetime.utcnow()
+    user_dict["created_at"] = datetime.now(timezone.utc)
+    user_dict["updated_at"] = datetime.now(timezone.utc)
     result = await db.users.insert_one(user_dict)
     new_user = await db.users.find_one({"_id": result.inserted_id})
     return UserResponse(**new_user, id=str(new_user["_id"]))
@@ -36,18 +36,17 @@ async def get_user(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
 @router.get("/", response_model=List[UserResponse])
 async def get_users(db: AsyncIOMotorDatabase = Depends(get_db)):
     users = await db.users.find().to_list(100)
-    # Ensure datetime fields are handled correctly by relying on UserResponse serialization
     return [UserResponse(**user, id=str(user["_id"])) for user in users]
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user(user_id: str, user_update: UserUpdate, db: AsyncIOMotorDatabase = Depends(get_db)):
     if not ObjectId.is_valid(user_id):
         raise HTTPException(status_code=400, detail="Invalid user ID format")
-    update_dict = {k: v for k, v in user_update.dict().items() if v is not None}
+    update_dict = {k: v for k, v in user_update.model_dump().items() if v is not None}  # Thay dict()
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields to update")
     
-    update_dict["updated_at"] = datetime.utcnow()
+    update_dict["updated_at"] = datetime.now(timezone.utc)
     result = await db.users.update_one(
         {"_id": ObjectId(user_id)},
         {"$set": update_dict}
@@ -65,4 +64,4 @@ async def delete_user(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     result = await db.users.delete_one({"_id": ObjectId(user_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "Deleted"}
+    return {"message": "User deleted"}

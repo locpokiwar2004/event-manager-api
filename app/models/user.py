@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
@@ -32,10 +32,6 @@ class UserResponse(BaseModel):
     role: str
     created_at: datetime
     updated_at: datetime
-
-    @field_serializer('created_at', 'updated_at')
-    def serialize_dt(self, dt: datetime, _info):
-        return dt.isoformat()  # Convert datetime to ISO 8601 string
 
     class Config:
         from_attributes = True

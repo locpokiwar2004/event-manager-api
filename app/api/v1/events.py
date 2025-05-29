@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.models.event import EventCreate, EventUpdate, EventResponse
-from motor.motor_asyncio import AsyncIOMotorDatabase  # Updated
-from app.config.database import get_db  # Updated
-from datetime import datetime
+from app.config.database import get_db
+from datetime import datetime, timezone
 from bson import ObjectId
 from typing import List
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
-@router.post("/{user_id}", response_model=EventResponse)
-async def create_event(user_id: str, event: EventCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
-    event_dict = event.dict()
-    event_dict["created_at"] = datetime.utcnow()
-    event_dict["updated_at"] = datetime.utcnow()
-    event_dict["organizer_id"] = user_id
+@router.post("/", response_model=EventResponse)
+async def create_event(event: EventCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
+    event_dict = event.model_dump()  # Thay dict()
+    event_dict["created_at"] = datetime.now(timezone.utc)
+    event_dict["updated_at"] = datetime.now(timezone.utc)
+    event_dict["organizer_id"] = str(ObjectId(event_dict["organizer_id"]))
     result = await db.events.insert_one(event_dict)
     new_event = await db.events.find_one({"_id": result.inserted_id})
     return EventResponse(**new_event, id=str(new_event["_id"]))

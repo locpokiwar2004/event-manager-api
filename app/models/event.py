@@ -46,19 +46,15 @@ class EventResponse(BaseModel):
     title: str
     category: str
     description: str
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime 
+    end_time: datetime   
     location: Location
     ticket_types: List[TicketType]
     status: str
     organizer_id: str
     image_url: str
-    created_at: datetime
-    updated_at: datetime
-    
-    @field_serializer('created_at', 'updated_at', 'start_time', 'end_time')
-    def serialize_dt(self, dt: datetime, _info):
-        return dt.isoformat()
+    created_at: datetime  
+    updated_at: datetime 
 
     class Config:
         from_attributes = True
