@@ -6,7 +6,7 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["event_management_db"]
-
+SECRET_KEY = os.getenv("SECRET_KEY")
 async def setup_indexes():
     await db.users.create_index([("email", 1)], unique=True)
     await db.events.create_index("start_time")

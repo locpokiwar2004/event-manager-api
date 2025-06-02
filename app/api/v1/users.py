@@ -16,7 +16,7 @@ async def create_user(user: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists")
     
-    user_dict = user.model_dump()  # Thay dict() bằng model_dump()
+    user_dict = user.model_dump()
     user_dict["password"] = pwd_context.hash(user_dict["password"])
     user_dict["created_at"] = datetime.now(timezone.utc)
     user_dict["updated_at"] = datetime.now(timezone.utc)
@@ -42,7 +42,7 @@ async def get_users(db: AsyncIOMotorDatabase = Depends(get_db)):
 async def update_user(user_id: str, user_update: UserUpdate, db: AsyncIOMotorDatabase = Depends(get_db)):
     if not ObjectId.is_valid(user_id):
         raise HTTPException(status_code=400, detail="Invalid user ID format")
-    update_dict = {k: v for k, v in user_update.model_dump().items() if v is not None}  # Thay dict()
+    update_dict = {k: v for k, v in user_update.model_dump().items() if v is not None}
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields to update")
     

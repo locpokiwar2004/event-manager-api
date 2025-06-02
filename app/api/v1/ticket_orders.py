@@ -10,7 +10,7 @@ router = APIRouter(prefix="/ticket_orders", tags=["Ticket Orders"])
 
 @router.post("/", response_model=TicketOrderResponse)
 async def create_ticket_order(order: TicketOrderCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
-    order_dict = order.model_dump()  # Thay dict()
+    order_dict = order.model_dump()
     order_dict["order_date"] = datetime.now(timezone.utc)
     order_dict["created_at"] = datetime.now(timezone.utc)
     order_dict["updated_at"] = datetime.now(timezone.utc)
@@ -27,9 +27,14 @@ async def get_ticket_order(order_id: str, db: AsyncIOMotorDatabase = Depends(get
     order = await db.ticket_orders.find_one({"_id": ObjectId(order_id)})
     if not order:
         raise HTTPException(status_code=404, detail="Ticket order not found")
+    order["user_id"] = str(order["user_id"])
+    order["event_id"] = str(order["event_id"])
     return TicketOrderResponse(**order, id=str(order["_id"]))
 
 @router.get("/", response_model=List[TicketOrderResponse])
 async def get_ticket_orders(db: AsyncIOMotorDatabase = Depends(get_db)):
     orders = await db.ticket_orders.find().to_list(100)
+    for order in orders:
+        order["user_id"] = str(order["user_id"])
+        order["event_id"] = str(order["event_id"])
     return [TicketOrderResponse(**order, id=str(order["_id"])) for order in orders]

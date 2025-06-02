@@ -10,10 +10,10 @@ router = APIRouter(prefix="/events", tags=["Events"])
 
 @router.post("/", response_model=EventResponse)
 async def create_event(event: EventCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
-    event_dict = event.model_dump()  # Thay dict()
+    event_dict = event.model_dump()
     event_dict["created_at"] = datetime.now(timezone.utc)
     event_dict["updated_at"] = datetime.now(timezone.utc)
-    event_dict["organizer_id"] = str(ObjectId(event_dict["organizer_id"]))
+    event_dict["organizer_id"] = str(ObjectId(event_dict["organizer_id"]))  # Chuyển ObjectId thành str
     result = await db.events.insert_one(event_dict)
     new_event = await db.events.find_one({"_id": result.inserted_id})
     return EventResponse(**new_event, id=str(new_event["_id"]))
@@ -25,9 +25,14 @@ async def get_event(event_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
     event = await db.events.find_one({"_id": ObjectId(event_id)})
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    # Chuyển organizer_id thành str
+    event["organizer_id"] = str(event["organizer_id"])
     return EventResponse(**event, id=str(event["_id"]))
 
 @router.get("/", response_model=List[EventResponse])
 async def get_events(db: AsyncIOMotorDatabase = Depends(get_db)):
     events = await db.events.find().to_list(100)
+    # Chuyển organizer_id thành str cho mỗi event
+    for event in events:
+        event["organizer_id"] = str(event["organizer_id"])
     return [EventResponse(**event, id=str(event["_id"])) for event in events]
